@@ -620,6 +620,27 @@ func (i *Interpolater) computeResourceMultiVariable(
 	return &variable, err
 }
 
+type indexKeys []string
+
+// we need to separate the index integer from the ID, and sort numerically
+func (i indexKeys) Less(j, k int) bool {
+	jDot := strings.LastIndex(i[j], ".")
+	kDot := strings.LastIndex(i[j], ".")
+
+	jIdx, _ := strconv.Atoi(i[j][jDot+1:])
+	kIdx, _ := strconv.Atoi(i[k][kDot+1:])
+
+	return jIdx < kIdx
+}
+
+func (i indexKeys) Swap(j, k int) {
+	i[j], i[k] = i[k], i[j]
+}
+
+func (i indexKeys) Len() int {
+	return len(i)
+}
+
 func (i *Interpolater) interpolateComplexTypeAttribute(
 	resourceID string,
 	attributes map[string]string) (ast.Variable, error) {
@@ -648,7 +669,7 @@ func (i *Interpolater) interpolateComplexTypeAttribute(
 				keys = append(keys, id)
 			}
 		}
-		sort.Strings(keys)
+		sort.Sort(indexKeys(keys))
 
 		var members []string
 		for _, key := range keys {
